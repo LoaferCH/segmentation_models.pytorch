@@ -69,7 +69,8 @@ class Epoch:
 class TrainEpoch(Epoch):
 
     def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True,
-                 grad_accumulation_steps=1):
+                 grad_accumulation_steps=1,
+                 use_amp=False):
         super().__init__(
             model=model,
             loss=loss,
@@ -82,6 +83,9 @@ class TrainEpoch(Epoch):
 
         self.grad_accumulation_steps = grad_accumulation_steps
         self.optimizer.zero_grad()
+        
+        self.use_amp = use_amp
+        self.scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
     def on_epoch_start(self):
         self.model.train()
@@ -94,12 +98,14 @@ class TrainEpoch(Epoch):
 
         assert 1 <= accum_n <= self.grad_accumulation_steps
 
-        prediction = self.model.forward(x)
-        loss = self.loss(prediction, y)
-        loss = loss / accum_n
-        loss.backward()
+        with torch.cuda.amp.autocast(enabled=self.use_amp):
+            prediction = self.model.forward(x)
+            loss = self.loss(prediction, y)
+            loss = loss / accum_n
+        self.scaler.scale(loss).backward()
         if i + 1 == accum_right:
-            self.optimizer.step()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
             self.optimizer.zero_grad()
         return loss * accum_n, prediction
 
