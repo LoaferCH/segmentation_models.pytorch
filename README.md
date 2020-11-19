@@ -121,6 +121,10 @@ preprocess_input = get_preprocessing_fn('resnet18', pretrained='imagenet')
 |efficientnet-b7                 |imagenet                        |63M                             |
 |mobilenet_v2                    |imagenet                        |2M                              |
 |xception                        |imagenet                        |22M                             |
+|resnest50                       |imagenet                        |25M                             |
+|resnest101                      |imagenet                        |46M                             |
+|resnest200                      |imagenet                        |68M                             |
+|resnest269                      |imagenet                        |108M                            |
 |timm-efficientnet-b0            |imagenet<br>advprop<br>noisy-student|4M                              |
 |timm-efficientnet-b1            |imagenet<br>advprop<br>noisy-student|6M                              |
 |timm-efficientnet-b2            |imagenet<br>advprop<br>noisy-student|7M                              |
@@ -133,6 +137,7 @@ preprocess_input = get_preprocessing_fn('resnet18', pretrained='imagenet')
 |timm-efficientnet-l2            |noisy-student                   |474M                            |
 
 \* `ssl`, `wsl` - semi-supervised and weakly-supervised learning on ImageNet ([repo](https://github.com/facebookresearch/semi-supervised-ImageNet1K-models)).
+
 
 ### Models API <a name="api"></a>
 
