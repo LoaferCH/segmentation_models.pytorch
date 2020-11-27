@@ -2,17 +2,21 @@ import sys
 import torch
 from tqdm import tqdm as tqdm
 from .meter import AverageValueMeter
+from .losses import BCEWithLogitsLoss
 
 
 class Epoch:
 
-    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True, aux_weight=0.05):
         self.model = model
         self.loss = loss
         self.metrics = metrics
         self.stage_name = stage_name
         self.verbose = verbose
         self.device = device
+
+        self.aux_weight = aux_weight
+        self.aux_loss = BCEWithLogitsLoss()
 
         self._to_device()
 
@@ -99,8 +103,14 @@ class TrainEpoch(Epoch):
         assert 1 <= accum_n <= self.grad_accumulation_steps
 
         with torch.cuda.amp.autocast(enabled=self.use_amp):
-            prediction = self.model.forward(x)
-            loss = self.loss(prediction, y)
+            if self.model.classification_head is None:
+                prediction = self.model.forward(x)
+                loss = self.loss(prediction, y)
+            else:
+                prediction, label_prediction = self.model.forward(x)
+                label_y = y.view(y.shape[0], y.shape[1], -1).sum(axis=2).bool().float()
+                loss_label = self.aux_loss(label_prediction, label_y)
+                loss = (1-self.aux_weight) * self.loss(prediction, y) + self.aux_weight * loss_label
             loss = loss / accum_n
         self.scaler.scale(loss).backward()
         if i + 1 == accum_right:
@@ -127,6 +137,12 @@ class ValidEpoch(Epoch):
 
     def batch_update(self, x, y, i, size):
         with torch.no_grad():
-            prediction = self.model.forward(x)
-            loss = self.loss(prediction, y)
+            if self.model.classification_head is None:
+                prediction = self.model.forward(x)
+                loss = self.loss(prediction, y)
+            else:
+                prediction, label_prediction = self.model.forward(x)
+                label_y = y.view(y.shape[0], y.shape[1], -1).sum(axis=2).bool().float()
+                loss_label = self.aux_loss(label_prediction, label_y)
+                loss = (1-self.aux_weight) * self.loss(prediction, y) + self.aux_weight * loss_label
         return loss, prediction
