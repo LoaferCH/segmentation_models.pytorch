@@ -72,7 +72,7 @@ class Epoch:
 
 class TrainEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True,
+    def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True, aux_weight=0.05, aux_loss=BCEWithLogitsLoss(),
                  grad_accumulation_steps=1,
                  use_amp=False):
         super().__init__(
@@ -82,6 +82,8 @@ class TrainEpoch(Epoch):
             stage_name='train',
             device=device,
             verbose=verbose,
+            aux_weight=aux_weight,
+            aux_loss=aux_loss,
         )
         self.optimizer = optimizer
 
@@ -122,7 +124,7 @@ class TrainEpoch(Epoch):
 
 class ValidEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, device='cpu', verbose=True, aux_weight=0.05, aux_loss=BCEWithLogitsLoss()):
         super().__init__(
             model=model,
             loss=loss,
@@ -130,6 +132,8 @@ class ValidEpoch(Epoch):
             stage_name='valid',
             device=device,
             verbose=verbose,
+            aux_weight=aux_weight,
+            aux_loss=aux_loss,
         )
 
     def on_epoch_start(self):
