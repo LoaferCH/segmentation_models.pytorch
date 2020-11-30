@@ -7,7 +7,7 @@ from .losses import BCEWithLogitsLoss
 
 class Epoch:
 
-    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True, aux_weight=0.05):
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True, aux_weight=0.05, aux_loss=BCEWithLogitsLoss()):
         self.model = model
         self.loss = loss
         self.metrics = metrics
@@ -16,7 +16,7 @@ class Epoch:
         self.device = device
 
         self.aux_weight = aux_weight
-        self.aux_loss = BCEWithLogitsLoss()
+        self.aux_loss = aux_loss
 
         self._to_device()
 
