@@ -134,6 +134,8 @@ Congratulations! You are done! Now you can train your model with your favorite f
 |resnest101                      |imagenet                        |46M                             |
 |resnest200                      |imagenet                        |68M                             |
 |resnest269                      |imagenet                        |108M                            |
+|res2net50_26w_4s                |imagenet                        |23M                             |
+|res2net101_26w_4s               |imagenet                        |43M                             |
 |timm-efficientnet-b0            |imagenet / advprop / noisy-student|4M                              |
 |timm-efficientnet-b1            |imagenet / advprop / noisy-student|6M                              |
 |timm-efficientnet-b2            |imagenet / advprop / noisy-student|7M                              |

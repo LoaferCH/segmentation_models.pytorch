@@ -2,6 +2,7 @@ import functools
 import warnings
 import torch.utils.model_zoo as model_zoo
 
+from .res2net import res2net_encoders
 from .resnet import resnet_encoders
 from .dpn import dpn_encoders
 from .vgg import vgg_encoders
@@ -39,6 +40,7 @@ encoders.update(inceptionv4_encoders)
 encoders.update(efficient_net_encoders)
 encoders.update(mobilenet_encoders)
 encoders.update(xception_encoders)
+encoders.update(res2net_encoders)
 encoders.update(resnest_encoders)
 encoders.update(timm_efficientnet_encoders)
 
