@@ -49,7 +49,13 @@ res2net_weights = {
     },
     'res2net101_26w_4s': {
         'imagenet': 'https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-res2net/res2net101_26w_4s-02a759a1.pth'
-    }
+    },
+    'res2net50_v1b_26w_4s': {
+        'imagenet': 'https://shanghuagao.oss-cn-beijing.aliyuncs.com/res2net/res2net50_v1b_26w_4s-3cf99910.pth'
+    },
+    'res2net101_v1b_26w_4s': {
+        'imagenet': 'https://shanghuagao.oss-cn-beijing.aliyuncs.com/res2net/res2net101_v1b_26w_4s-0812c246.pth'
+    },
 }
 
 pretrained_settings = {}
@@ -88,5 +94,33 @@ res2net_encoders = {
             'base_width': 26,
             'block_args': {'scale': 4}
         },
-    }
+    },
+    'res2net50_v1b_26w_4s': {
+        'encoder': Res2NetEncoder,
+        "pretrained_settings": pretrained_settings["res2net50_v1b_26w_4s"],
+        'params': {
+            'out_channels': (3, 64, 256, 512, 1024, 2048),
+            'block': Bottle2neck,
+            'layers': [3, 4, 6, 3],
+            'base_width': 26,
+            'stem_width': 32,
+            'stem_type': 'deep',
+            'avg_down': True,
+            'block_args': {'scale': 4}
+        },
+    },
+    'res2net101_v1b_26w_4s': {
+        'encoder': Res2NetEncoder,
+        "pretrained_settings": pretrained_settings["res2net101_v1b_26w_4s"],
+        'params': {
+            'out_channels': (3, 64, 256, 512, 1024, 2048),
+            'block': Bottle2neck,
+            'layers': [3, 4, 23, 3],
+            'base_width': 26,
+            'stem_width': 32,
+            'stem_type': 'deep',
+            'avg_down': True,
+            'block_args': {'scale': 4}
+        },
+    },
 }
