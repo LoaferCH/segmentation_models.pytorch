@@ -2,17 +2,21 @@ import sys
 import torch
 from tqdm import tqdm as tqdm
 from .meter import AverageValueMeter
+from .losses import BCEWithLogitsLoss
 
 
 class Epoch:
 
-    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True, aux_weight=0.05, aux_loss=BCEWithLogitsLoss()):
         self.model = model
         self.loss = loss
         self.metrics = metrics
         self.stage_name = stage_name
         self.verbose = verbose
         self.device = device
+
+        self.aux_weight = aux_weight
+        self.aux_loss = aux_loss
 
         self._to_device()
 
@@ -27,7 +31,7 @@ class Epoch:
         s = ', '.join(str_logs)
         return s
 
-    def batch_update(self, x, y):
+    def batch_update(self, x, y, i, size):
         raise NotImplementedError
 
     def on_epoch_start(self):
@@ -42,9 +46,9 @@ class Epoch:
         metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
-            for x, y in iterator:
+            for i, (x, y) in enumerate(iterator):
                 x, y = x.to(self.device), y.to(self.device)
-                loss, y_pred = self.batch_update(x, y)
+                loss, y_pred = self.batch_update(x, y, i, len(dataloader))
 
                 # update loss logs
                 loss_value = loss.cpu().detach().numpy()
@@ -68,7 +72,9 @@ class Epoch:
 
 class TrainEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True, aux_weight=0.05, aux_loss=BCEWithLogitsLoss(),
+                 grad_accumulation_steps=1,
+                 use_amp=False):
         super().__init__(
             model=model,
             loss=loss,
@@ -76,24 +82,49 @@ class TrainEpoch(Epoch):
             stage_name='train',
             device=device,
             verbose=verbose,
+            aux_weight=aux_weight,
+            aux_loss=aux_loss,
         )
         self.optimizer = optimizer
+
+        self.grad_accumulation_steps = grad_accumulation_steps
+        self.optimizer.zero_grad()
+        
+        self.use_amp = use_amp
+        self.scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
     def on_epoch_start(self):
         self.model.train()
 
-    def batch_update(self, x, y):
-        self.optimizer.zero_grad()
-        prediction = self.model.forward(x)
-        loss = self.loss(prediction, y)
-        loss.backward()
-        self.optimizer.step()
-        return loss, prediction
+    def batch_update(self, x, y, i, size):
+        accum_bin = i // self.grad_accumulation_steps
+        accum_left = accum_bin * self.grad_accumulation_steps
+        accum_right = min((accum_bin + 1) * self.grad_accumulation_steps, size)
+        accum_n = accum_right - accum_left
+
+        assert 1 <= accum_n <= self.grad_accumulation_steps
+
+        with torch.cuda.amp.autocast(enabled=self.use_amp):
+            if self.model.classification_head is None:
+                prediction = self.model.forward(x)
+                loss = self.loss(prediction, y)
+            else:
+                prediction, label_prediction = self.model.forward(x)
+                label_y = y.view(y.shape[0], y.shape[1], -1).sum(axis=2).bool().float()
+                loss_label = self.aux_loss(label_prediction, label_y)
+                loss = (1-self.aux_weight) * self.loss(prediction, y) + self.aux_weight * loss_label
+            loss = loss / accum_n
+        self.scaler.scale(loss).backward()
+        if i + 1 == accum_right:
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+            self.optimizer.zero_grad()
+        return loss * accum_n, prediction
 
 
 class ValidEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, device='cpu', verbose=True, aux_weight=0.05, aux_loss=BCEWithLogitsLoss()):
         super().__init__(
             model=model,
             loss=loss,
@@ -101,13 +132,21 @@ class ValidEpoch(Epoch):
             stage_name='valid',
             device=device,
             verbose=verbose,
+            aux_weight=aux_weight,
+            aux_loss=aux_loss,
         )
 
     def on_epoch_start(self):
         self.model.eval()
 
-    def batch_update(self, x, y):
+    def batch_update(self, x, y, i, size):
         with torch.no_grad():
-            prediction = self.model.forward(x)
-            loss = self.loss(prediction, y)
+            if self.model.classification_head is None:
+                prediction = self.model.forward(x)
+                loss = self.loss(prediction, y)
+            else:
+                prediction, label_prediction = self.model.forward(x)
+                label_y = y.view(y.shape[0], y.shape[1], -1).sum(axis=2).bool().float()
+                loss_label = self.aux_loss(label_prediction, label_y)
+                loss = (1-self.aux_weight) * self.loss(prediction, y) + self.aux_weight * loss_label
         return loss, prediction
