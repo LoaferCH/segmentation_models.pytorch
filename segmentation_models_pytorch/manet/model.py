@@ -1,17 +1,16 @@
-from typing import Optional, Union
-
-from .decoder import PSPDecoder
+from typing import Optional, Union, List
+from .decoder import MAnetDecoder
 from ..encoders import get_encoder
-
 from ..base import SegmentationModel
 from ..base import SegmentationHead, ClassificationHead
 
 
-class PSPNet(SegmentationModel):
-    """PSPNet_ is a fully convolution neural network for image semantic segmentation. Consist of 
-    *encoder* and *Spatial Pyramid* (decoder). Spatial Pyramid build on top of encoder and does not 
-    use "fine-features" (features of high spatial resolution). PSPNet can be used for multiclass segmentation
-    of high resolution images, however it is not good for detecting small objects and producing accurate, pixel-level mask. 
+class MAnet(SegmentationModel):
+    """MAnet_ :  Multi-scale Attention Net. The MA-Net can capture rich contextual dependencies based on the attention mechanism, 
+    using two blocks:
+     - Position-wise Attention Block (PAB), which captures the spatial dependencies between pixels in a global view
+     - Multi-scale Fusion Attention Block (MFAB), which  captures the channel dependencies between any feature map by
+       multi-scale semantic feature fusion
 
     Args:
         encoder_name: Name of the classification model that will be used as an encoder (a.k.a backbone)
@@ -22,18 +21,19 @@ class PSPNet(SegmentationModel):
             Default is 5
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and 
             other pretrained weights (see table with available weights for each encoder_name)
-        psp_out_channels: A number of filters in Spatial Pyramid
-        psp_use_batchnorm: If **True**, BatchNorm2d layer between Conv2D and Activation layers
+        decoder_channels: List of integers which specify **in_channels** parameter for convolutions used in decoder.
+            Length of the list should be the same as **encoder_depth**
+        decoder_use_batchnorm: If **True**, BatchNorm2d layer between Conv2D and Activation layers
             is used. If **"inplace"** InplaceABN will be used, allows to decrease memory consumption.
             Available options are **True, False, "inplace"**
-        psp_dropout: Spatial dropout rate in [0, 1) used in Spatial Pyramid
+        decoder_pab_channels: A number of channels for PAB module in decoder. 
+            Default is 64.
         in_channels: A number of input channels for the model, default is 3 (RGB images)
         classes: A number of classes for output mask (or you can think as a number of channels of output mask)
         activation: An activation function to apply after the final convolution layer.
             Available options are **"sigmoid"**, **"softmax"**, **"logsoftmax"**, **"tanh"**, **"identity"**, **callable** and **None**.
             Default is **None**
-        upsampling: Final upsampling factor. Default is 8 to preserve input-output spatial shape identity
-        aux_params: Dictionary with parameters of the auxiliary output (classification head). Auxiliary output is build 
+        aux_params: Dictionary with parameters of the auxiliary output (classification head). Auxiliary output is build
             on top of encoder if **aux_params** is not **None** (default). Supported params:
                 - classes (int): A number of classes
                 - pooling (str): One of "max", "avg". Default is "avg"
@@ -41,25 +41,25 @@ class PSPNet(SegmentationModel):
                 - activation (str): An activation function to apply "sigmoid"/"softmax" (could be **None** to return logits)
 
     Returns:
-        ``torch.nn.Module``: **PSPNet**
+        ``torch.nn.Module``: **MAnet**
 
-    .. _PSPNet:
-        https://arxiv.org/abs/1612.01105
+    .. _MAnet:
+        https://ieeexplore.ieee.org/abstract/document/9201310
+
     """
 
     def __init__(
         self,
         encoder_name: str = "resnet34",
+        encoder_depth: int = 5,
         encoder_weights: Optional[str] = "imagenet",
-        encoder_depth: int = 3,
-        psp_out_channels: int = 512,
-        psp_use_batchnorm: bool = True,
-        psp_dropout: float = 0.2,
+        decoder_use_batchnorm: bool = True,
+        decoder_channels: List[int] = (256, 128, 64, 32, 16),
+        decoder_pab_channels: int = 64,
         in_channels: int = 3,
         classes: int = 1,
         activation: Optional[Union[str, callable]] = None,
-        upsampling: int = 8,
-        aux_params: Optional[dict] = None,
+        aux_params: Optional[dict] = None
     ):
         super().__init__()
 
@@ -70,27 +70,27 @@ class PSPNet(SegmentationModel):
             weights=encoder_weights,
         )
 
-        self.decoder = PSPDecoder(
+        self.decoder = MAnetDecoder(
             encoder_channels=self.encoder.out_channels,
-            use_batchnorm=psp_use_batchnorm,
-            out_channels=psp_out_channels,
-            dropout=psp_dropout,
+            decoder_channels=decoder_channels,
+            n_blocks=encoder_depth,
+            use_batchnorm=decoder_use_batchnorm,
+            pab_channels=decoder_pab_channels
         )
 
         self.segmentation_head = SegmentationHead(
-            in_channels=psp_out_channels,
+            in_channels=decoder_channels[-1],
             out_channels=classes,
-            kernel_size=3,
             activation=activation,
-            upsampling=upsampling,
+            kernel_size=3,
         )
 
-        if aux_params:
+        if aux_params is not None:
             self.classification_head = ClassificationHead(
                 in_channels=self.encoder.out_channels[-1], **aux_params
             )
         else:
             self.classification_head = None
 
-        self.name = "psp-{}".format(encoder_name)
+        self.name = "manet-{}".format(encoder_name)
         self.initialize()
