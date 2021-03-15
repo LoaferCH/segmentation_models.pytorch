@@ -51,7 +51,7 @@ encoders.update(timm_regnet_encoders)
 encoders.update(timm_sknet_encoders)
 
 
-def get_encoder(name, in_channels=3, depth=5, weights=None):
+def get_encoder(name, in_channels=3, depth=5, weights=None, weights_init_mode=None):
 
     try:
         Encoder = encoders[name]["encoder"]
@@ -71,7 +71,7 @@ def get_encoder(name, in_channels=3, depth=5, weights=None):
             ))
         encoder.load_state_dict(model_zoo.load_url(settings["url"]))
 
-    encoder.set_in_channels(in_channels)
+    encoder.set_in_channels(in_channels, weights_init_mode if weights is not None else None)
 
     return encoder
 

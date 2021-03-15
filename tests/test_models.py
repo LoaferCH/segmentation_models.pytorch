@@ -105,11 +105,15 @@ def test_upsample(model_class, upsampling):
 
 
 @pytest.mark.parametrize("model_class", [smp.FPN])
-@pytest.mark.parametrize("encoder_name", ENCODERS)
+@pytest.mark.parametrize("encoder_weights", [None, "imagenet"])
+@pytest.mark.parametrize("encoder_weights_init_mode", [None, "copy_init"])
 @pytest.mark.parametrize("in_channels", [1, 2, 4])
-def test_in_channels(model_class, encoder_name, in_channels):
+def test_in_channels(model_class, encoder_weights, encoder_weights_init_mode, in_channels):
     sample = torch.ones([1, in_channels, 64, 64])
-    model = model_class(DEFAULT_ENCODER, encoder_weights=None, in_channels=in_channels)
+    model = model_class(DEFAULT_ENCODER,
+                        encoder_weights=encoder_weights,
+                        encoder_weights_init_mode=encoder_weights_init_mode,
+                        in_channels=in_channels)
     model.eval()
     with torch.no_grad():
         model(sample)

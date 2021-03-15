@@ -4,7 +4,7 @@
 **Python library with Neural Networks for Image  
 Segmentation based on [PyTorch](https://pytorch.org/).**  
 
-![PyPI version](https://badge.fury.io/py/segmentation-models-pytorch.svg) [![Build Status](https://travis-ci.com/qubvel/segmentation_models.pytorch.svg?branch=master)](https://travis-ci.com/qubvel/segmentation_models.pytorch) [![Documentation Status](https://readthedocs.org/projects/smp/badge/?version=latest)](https://smp.readthedocs.io/en/latest/?badge=latest) <br>[![Downloads](https://static.pepy.tech/personalized-badge/segmentation-models-pytorch?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads)](https://pepy.tech/project/segmentation-models-pytorch) [![Generic badge](https://img.shields.io/badge/License-MIT-<COLOR>.svg)](https://shields.io/)
+![PyPI version](https://badge.fury.io/py/segmentation-models-pytorch.svg) [![Build Status](https://travis-ci.com/qubvel/segmentation_models.pytorch.svg?branch=master)](https://travis-ci.com/qubvel/segmentation_models.pytorch) [![Documentation Status](https://readthedocs.org/projects/smp/badge/?version=latest)](https://smp.readthedocs.io/en/latest/?badge=latest) <br> ![Downloads](https://pepy.tech/badge/segmentation-models-pytorch) [![Generic badge](https://img.shields.io/badge/License-MIT-<COLOR>.svg)](https://shields.io/)
 
 </div>
 
@@ -46,8 +46,8 @@ import segmentation_models_pytorch as smp
 
 model = smp.Unet(
     encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
-    encoder_weights="imagenet",     # use `imagenet` pretrained weights for encoder initialization
-    in_channels=1,                  # model input channels (1 for grayscale images, 3 for RGB, etc.)
+    encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
+    in_channels=1,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
     classes=3,                      # model output channels (number of classes in your dataset)
 )
 ```
@@ -56,7 +56,7 @@ model = smp.Unet(
 
 #### 2. Configure data preprocessing
 
-All encoders have pretrained weights. Preparing your data the same way as during weights pretraining may give your better results (higher metric score and faster convergence). But it is relevant only for 1-2-3-channels images and **not necessary** in case you train the whole model, not only decoder.
+All encoders have pretrained weights. Preparing your data the same way as during weights pre-training may give your better results (higher metric score and faster convergence). But it is relevant only for 1-2-3-channels images and **not necessary** in case you train the whole model, not only decoder.
 
 ```python
 from segmentation_models_pytorch.encoders import get_preprocessing_fn

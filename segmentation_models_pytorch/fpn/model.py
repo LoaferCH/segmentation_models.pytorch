@@ -16,6 +16,9 @@ class FPN(SegmentationModel):
             Default is 5
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and 
             other pretrained weights (see table with available weights for each encoder_name)
+        encoder_weights_init_mode: Encoder weights initialization mode.
+            Available options are **"copy_init"** and **None**.
+            Default is **None**
         decoder_pyramid_channels: A number of convolution filters in Feature Pyramid of FPN_
         decoder_segmentation_channels: A number of convolution filters in segmentation blocks of FPN_
         decoder_merge_policy: Determines how to merge pyramid features inside FPN. Available options are **add** and **cat**
@@ -46,6 +49,7 @@ class FPN(SegmentationModel):
         encoder_name: str = "resnet34",
         encoder_depth: int = 5,
         encoder_weights: Optional[str] = "imagenet",
+        encoder_weights_init_mode: Optional[str] = None,
         decoder_pyramid_channels: int = 256,
         decoder_segmentation_channels: int = 128,
         decoder_merge_policy: str = "add",
@@ -63,6 +67,7 @@ class FPN(SegmentationModel):
             in_channels=in_channels,
             depth=encoder_depth,
             weights=encoder_weights,
+            weights_init_mode=encoder_weights_init_mode,
         )
 
         self.decoder = FPNDecoder(

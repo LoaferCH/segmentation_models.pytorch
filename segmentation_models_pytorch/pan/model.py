@@ -17,6 +17,9 @@ class PAN(SegmentationModel):
             to extract features of different spatial resolution
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and 
             other pretrained weights (see table with available weights for each encoder_name)
+        encoder_weights_init_mode: Encoder weights initialization mode.
+            Available options are **"copy_init"** and **None**.
+            Default is **None**
         encoder_dilation: Flag to use dilation in encoder last layer. Doesn't work with ***ception***, **vgg***, 
             **densenet*`** backbones, default is **True**
         decoder_channels: A number of convolution layer filters in decoder blocks
@@ -45,6 +48,7 @@ class PAN(SegmentationModel):
             self,
             encoder_name: str = "resnet34",
             encoder_weights: Optional[str] = "imagenet",
+            encoder_weights_init_mode: Optional[str] = None,
             encoder_dilation: bool = True,
             decoder_channels: int = 32,
             in_channels: int = 3,
@@ -60,6 +64,7 @@ class PAN(SegmentationModel):
             in_channels=in_channels,
             depth=5,
             weights=encoder_weights,
+            weights_init_mode=encoder_weights_init_mode,
         )
 
         if encoder_dilation:

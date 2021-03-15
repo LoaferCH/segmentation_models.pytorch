@@ -18,6 +18,9 @@ class DeepLabV3(SegmentationModel):
             Default is 5
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and 
             other pretrained weights (see table with available weights for each encoder_name)
+        encoder_weights_init_mode: Encoder weights initialization mode.
+            Available options are **"copy_init"** and **None**.
+            Default is **None**
         decoder_channels: A number of convolution filters in ASPP module. Default is 256
         in_channels: A number of input channels for the model, default is 3 (RGB images)
         classes: A number of classes for output mask (or you can think as a number of channels of output mask)
@@ -44,6 +47,7 @@ class DeepLabV3(SegmentationModel):
             encoder_name: str = "resnet34",
             encoder_depth: int = 5,
             encoder_weights: Optional[str] = "imagenet",
+            encoder_weights_init_mode: Optional[str] = None,
             decoder_channels: int = 256,
             in_channels: int = 3,
             classes: int = 1,
@@ -58,6 +62,7 @@ class DeepLabV3(SegmentationModel):
             in_channels=in_channels,
             depth=encoder_depth,
             weights=encoder_weights,
+            weights_init_mode=encoder_weights_init_mode,
         )
         self.encoder.make_dilated(
             stage_list=[4, 5],
@@ -98,6 +103,9 @@ class DeepLabV3Plus(SegmentationModel):
             Default is 5
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and 
             other pretrained weights (see table with available weights for each encoder_name)
+        encoder_weights_init_mode: Encoder weights initialization mode.
+            Available options are **"copy_init"** and **None**.
+            Default is **None**
         encoder_output_stride: Downsampling factor for last encoder features (see original paper for explanation)
         decoder_atrous_rates: Dilation rates for ASPP module (should be a tuple of 3 integer values)
         decoder_channels: A number of convolution filters in ASPP module. Default is 256
@@ -125,6 +133,7 @@ class DeepLabV3Plus(SegmentationModel):
             encoder_name: str = "resnet34",
             encoder_depth: int = 5,
             encoder_weights: Optional[str] = "imagenet",
+            encoder_weights_init_mode: Optional[str] = None,
             encoder_output_stride: int = 16,
             decoder_channels: int = 256,
             decoder_atrous_rates: tuple = (12, 24, 36),
@@ -141,6 +150,7 @@ class DeepLabV3Plus(SegmentationModel):
             in_channels=in_channels,
             depth=encoder_depth,
             weights=encoder_weights,
+            weights_init_mode=encoder_weights_init_mode,
         )
 
         if encoder_output_stride == 8:

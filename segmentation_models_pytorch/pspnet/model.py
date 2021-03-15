@@ -22,6 +22,9 @@ class PSPNet(SegmentationModel):
             Default is 5
         encoder_weights: One of **None** (random initialization), **"imagenet"** (pre-training on ImageNet) and 
             other pretrained weights (see table with available weights for each encoder_name)
+        encoder_weights_init_mode: Encoder weights initialization mode.
+            Available options are **"copy_init"** and **None**.
+            Default is **None**
         psp_out_channels: A number of filters in Spatial Pyramid
         psp_use_batchnorm: If **True**, BatchNorm2d layer between Conv2D and Activation layers
             is used. If **"inplace"** InplaceABN will be used, allows to decrease memory consumption.
@@ -51,6 +54,7 @@ class PSPNet(SegmentationModel):
         self,
         encoder_name: str = "resnet34",
         encoder_weights: Optional[str] = "imagenet",
+        encoder_weights_init_mode: Optional[str] = None,
         encoder_depth: int = 3,
         psp_out_channels: int = 512,
         psp_use_batchnorm: bool = True,
@@ -68,6 +72,7 @@ class PSPNet(SegmentationModel):
             in_channels=in_channels,
             depth=encoder_depth,
             weights=encoder_weights,
+            weights_init_mode=encoder_weights_init_mode,
         )
 
         self.decoder = PSPDecoder(
