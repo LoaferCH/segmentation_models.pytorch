@@ -105,14 +105,14 @@ class TrainEpoch(Epoch):
         assert 1 <= accum_n <= self.grad_accumulation_steps
 
         with torch.cuda.amp.autocast(enabled=self.use_amp):
-            if self.model.classification_head is None:
-                prediction = self.model.forward(x)
-                loss = self.loss(prediction, y)
-            else:
+            if hasattr(self.model, 'classification_head') and self.model.classification_head is not None:
                 prediction, label_prediction = self.model.forward(x)
                 label_y = y.view(y.shape[0], y.shape[1], -1).sum(axis=2).bool().float()
                 loss_label = self.aux_loss(label_prediction, label_y)
                 loss = (1-self.aux_weight) * self.loss(prediction, y) + self.aux_weight * loss_label
+            else:
+                prediction = self.model.forward(x)
+                loss = self.loss(prediction, y)
             loss = loss / accum_n
         self.scaler.scale(loss).backward()
         if i + 1 == accum_right:
@@ -141,12 +141,12 @@ class ValidEpoch(Epoch):
 
     def batch_update(self, x, y, i, size):
         with torch.no_grad():
-            if self.model.classification_head is None:
-                prediction = self.model.forward(x)
-                loss = self.loss(prediction, y)
-            else:
+            if hasattr(self.model, 'classification_head') and self.model.classification_head is not None:
                 prediction, label_prediction = self.model.forward(x)
                 label_y = y.view(y.shape[0], y.shape[1], -1).sum(axis=2).bool().float()
                 loss_label = self.aux_loss(label_prediction, label_y)
                 loss = (1-self.aux_weight) * self.loss(prediction, y) + self.aux_weight * loss_label
+            else:
+                prediction = self.model.forward(x)
+                loss = self.loss(prediction, y)
         return loss, prediction
