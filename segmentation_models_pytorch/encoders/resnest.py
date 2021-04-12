@@ -3,6 +3,7 @@ from resnest.torch.resnet import ResNet, Bottleneck
 from resnest.torch.resnest import resnest_model_urls
 
 from ._base import EncoderMixin
+from ._bigearthnet import bigearthnet_urls
 
 
 class ResNestEncoder(ResNet, EncoderMixin):
@@ -37,8 +38,8 @@ class ResNestEncoder(ResNet, EncoderMixin):
         return features
 
     def load_state_dict(self, state_dict, **kwargs):
-        state_dict.pop("fc.bias")
-        state_dict.pop("fc.weight")
+        state_dict.pop("fc.bias", None)
+        state_dict.pop("fc.weight", None)
         super().load_state_dict(state_dict, **kwargs)
 
 
@@ -51,6 +52,13 @@ def get_pretrained_settings(name):
             "input_space": "RGB",
             "input_range": [0, 1],
         },
+        "bigearthnet": {
+            "mean": [0.00656051, 0.009372348, 0.009006419],
+            "std": [0.008734514, 0.00889417, 0.010313382],
+            "url": bigearthnet_urls[name],
+            "input_space": "RGB",
+            "input_range": [0, 1],
+        }
     }
 
 
