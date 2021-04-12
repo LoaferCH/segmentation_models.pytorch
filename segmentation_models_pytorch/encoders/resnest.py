@@ -44,7 +44,7 @@ class ResNestEncoder(ResNet, EncoderMixin):
 
 
 def get_pretrained_settings(name):
-    return {
+    settings = {
         "imagenet": {
             "mean": [0.485, 0.456, 0.406],
             "std": [0.229, 0.224, 0.225],
@@ -52,14 +52,20 @@ def get_pretrained_settings(name):
             "input_space": "RGB",
             "input_range": [0, 1],
         },
-        "bigearthnet": {
-            "mean": [0.00656051, 0.009372348, 0.009006419],
-            "std": [0.008734514, 0.00889417, 0.010313382],
-            "url": bigearthnet_urls[name],
-            "input_space": "RGB",
-            "input_range": [0, 1],
-        }
     }
+
+    if name in bigearthnet_urls.keys():
+        settings.update({
+            "bigearthnet": {
+                "mean": [0.00656051, 0.009372348, 0.009006419],
+                "std": [0.008734514, 0.00889417, 0.010313382],
+                "url": bigearthnet_urls[name],
+                "input_space": "RGB",
+                "input_range": [0, 1],
+            }
+        })
+
+    return settings
 
 
 resnest_encoders = {
